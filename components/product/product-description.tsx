@@ -3,6 +3,7 @@ import Price from "components/price";
 import Prose from "components/prose";
 import { Product } from "lib/shopify/types";
 import { VariantSelector } from "./variant-selector";
+import WishlistButton from "./wishlist-button";
 
 export function ProductDescription({ product }: { product: Product }) {
   return (
@@ -24,6 +25,7 @@ export function ProductDescription({ product }: { product: Product }) {
         />
       ) : null}
       <AddToCart product={product} />
+      <WishlistButton product={product} />
     </>
   );
 }
