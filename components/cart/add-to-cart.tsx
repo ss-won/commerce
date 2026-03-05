@@ -5,7 +5,7 @@ import clsx from "clsx";
 import { addItem } from "components/cart/actions";
 import { Product, ProductVariant } from "lib/shopify/types";
 import { useSearchParams } from "next/navigation";
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useCart } from "./cart-context";
 
 function SubmitButton({
@@ -62,6 +62,8 @@ export function AddToCart({ product }: { product: Product }) {
   const { addCartItem } = useCart();
   const searchParams = useSearchParams();
   const [message, formAction] = useActionState(addItem, null);
+  const [isAdding, setIsAdding] = useState(false);
+  const [lastAdded, setLastAdded] = useState<string | null>(null);
 
   const variant = variants.find((variant: ProductVariant) =>
     variant.selectedOptions.every(
@@ -75,10 +77,27 @@ export function AddToCart({ product }: { product: Product }) {
     (variant) => variant.id === selectedVariantId,
   )!;
 
+  // Track when item was last added for toast notification
+  useEffect(() => {
+    if (lastAdded) {
+      const timer = setTimeout(() => {
+        setLastAdded(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [lastAdded]);
+
+  // Sync adding state with form action
+  useEffect(() => {
+    setIsAdding(false);
+  });
+
   return (
     <form
       action={async () => {
+        setIsAdding(true);
         addCartItem(finalVariant, product);
+        setLastAdded(product.title);
         addItemAction();
       }}
     >
@@ -89,6 +108,11 @@ export function AddToCart({ product }: { product: Product }) {
       <p aria-live="polite" className="sr-only" role="status">
         {message}
       </p>
+      {lastAdded && (
+        <p className="mt-2 text-sm text-green-600">
+          {lastAdded} added to cart!
+        </p>
+      )}
     </form>
   );
 }
