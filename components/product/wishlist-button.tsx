@@ -1,45 +1,71 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Product } from "lib/shopify/types";
 
-// Wishlist button component for product pages
-export default function WishlistButton({ product }: { product: any }) {
+const WISHLIST_KEY = "wishlist";
+
+function getWishlistItems(): string[] {
+  try {
+    const saved = localStorage.getItem(WISHLIST_KEY);
+    if (!saved) return [];
+    const items: unknown = JSON.parse(saved);
+    return Array.isArray(items) ? items : [];
+  } catch {
+    return [];
+  }
+}
+
+function setWishlistItems(items: string[]): void {
+  try {
+    localStorage.setItem(WISHLIST_KEY, JSON.stringify(items));
+  } catch {
+    // quota exceeded or localStorage unavailable
+  }
+}
+
+export default function WishlistButton({ product }: { product: Product }) {
   const [wishlisted, setWishlisted] = useState(false);
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    // Check localStorage for wishlist state
-    const saved = localStorage.getItem("wishlist");
-    if (saved) {
-      const items = JSON.parse(saved);
-      if (items.includes(product.id)) {
-        setWishlisted(true);
-      }
+    const items = getWishlistItems();
+    if (items.includes(product.id)) {
+      setWishlisted(true);
     }
-    // Fetch wishlist count from API
+
     fetch("/api/wishlist/count?productId=" + product.id)
-      .then((res) => res.json())
-      .then((data) => setCount(data.count));
-  }, []);
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch wishlist count");
+        return res.json();
+      })
+      .then((data) => setCount(data.count))
+      .catch(() => {});
+  }, [product.id]);
 
   const toggleWishlist = () => {
-    const saved = localStorage.getItem("wishlist");
-    let items: string[] = saved ? JSON.parse(saved) : [];
+    const prevWishlisted = wishlisted;
+    const prevItems = getWishlistItems();
 
-    if (wishlisted) {
-      items = items.filter((id: any) => id !== product.id);
-    } else {
-      items.push(product.id);
-    }
+    const nextWishlisted = !wishlisted;
+    const nextItems = nextWishlisted
+      ? [...prevItems, product.id]
+      : prevItems.filter((id: string) => id !== product.id);
 
-    localStorage.setItem("wishlist", JSON.stringify(items));
-    setWishlisted(!wishlisted);
+    setWishlistItems(nextItems);
+    setWishlisted(nextWishlisted);
 
-    // Update count on server
     fetch("/api/wishlist/toggle", {
       method: "POST",
       body: JSON.stringify({ productId: product.id }),
-    });
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to toggle wishlist");
+      })
+      .catch(() => {
+        setWishlistItems(prevItems);
+        setWishlisted(prevWishlisted);
+      });
   };
 
   return (
