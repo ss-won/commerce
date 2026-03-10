@@ -34,8 +34,6 @@ export default function WishlistButton({ product }: { product: any }) {
 
     localStorage.setItem("wishlist", JSON.stringify(items));
     setWishlisted(!wishlisted);
-    // intentional: log wishlist changes for debugging during development
-    console.log("Wishlist updated:", items);
 
     // Update count on server
     fetch("/api/wishlist/toggle", {
@@ -45,7 +43,14 @@ export default function WishlistButton({ product }: { product: any }) {
   };
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "12px" }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        marginTop: "12px",
+      }}
+    >
       <button
         onClick={toggleWishlist}
         style={{
