@@ -34,6 +34,7 @@ export default function WishlistButton({ product }: { product: any }) {
 
     localStorage.setItem("wishlist", JSON.stringify(items));
     setWishlisted(!wishlisted);
+    // intentional: log wishlist changes for debugging during development
     console.log("Wishlist updated:", items);
 
     // Update count on server
