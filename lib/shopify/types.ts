@@ -124,7 +124,7 @@ export type ShopifyProduct = {
   descriptionHtml: string;
   options: ProductOption[];
   priceRange: {
-    maxVariantPrice: Money;
+    maxVariantPrice: Money & { compareAtPrice?: Money };
     minVariantPrice: Money;
   };
   variants: Connection<ProductVariant>;

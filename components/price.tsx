@@ -13,18 +13,15 @@ const Price = ({
   currencyCodeClassName?: string;
   compareAtPrice?: string;
 } & React.ComponentProps<"p">) => {
-  const formattedPrice = new Intl.NumberFormat(undefined, {
+  const formatter = new Intl.NumberFormat(undefined, {
     style: "currency",
     currency: currencyCode,
     currencyDisplay: "narrowSymbol",
-  }).format(parseFloat(amount));
+  });
 
+  const formattedPrice = formatter.format(parseFloat(amount));
   const formattedCompareAt = compareAtPrice
-    ? new Intl.NumberFormat(undefined, {
-        style: "currency",
-        currency: currencyCode,
-        currencyDisplay: "narrowSymbol",
-      }).format(parseFloat(compareAtPrice))
+    ? formatter.format(parseFloat(compareAtPrice))
     : null;
 
   return (

@@ -4,17 +4,20 @@ import Prose from "components/prose";
 import { Product } from "lib/shopify/types";
 import { VariantSelector } from "./variant-selector";
 
-function formatDiscount(originalPrice: string, discountedPrice: string) {
-  const original = parseFloat(originalPrice);
-  const discounted = parseFloat(discountedPrice);
-  const percentage = Math.round(((original - discounted) / original) * 100);
-  return percentage > 0 ? `${percentage}% OFF` : null;
-}
-
 export function ProductDescription({ product }: { product: Product }) {
   const minPrice = product.priceRange.minVariantPrice.amount;
   const maxPrice = product.priceRange.maxVariantPrice.amount;
-  const hasDiscount = parseFloat(minPrice) < parseFloat(maxPrice);
+  const compareAt = product.priceRange.maxVariantPrice.compareAtPrice?.amount;
+  const hasDiscount = compareAt
+    ? parseFloat(minPrice) < parseFloat(compareAt)
+    : false;
+  const discountPercentage = compareAt
+    ? Math.round(
+        ((parseFloat(compareAt) - parseFloat(minPrice)) /
+          parseFloat(compareAt)) *
+          100,
+      )
+    : 0;
 
   return (
     <>
@@ -25,11 +28,12 @@ export function ProductDescription({ product }: { product: Product }) {
             <Price
               amount={product.priceRange.maxVariantPrice.amount}
               currencyCode={product.priceRange.maxVariantPrice.currencyCode}
+              compareAtPrice={compareAt}
             />
           </div>
           {hasDiscount && (
             <span className="rounded-full bg-red-500 px-2 py-1 text-xs text-white">
-              {formatDiscount(maxPrice, minPrice)}
+              {discountPercentage}% OFF
             </span>
           )}
         </div>

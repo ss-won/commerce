@@ -11,9 +11,11 @@ import { useCart } from "./cart-context";
 function SubmitButton({
   availableForSale,
   selectedVariantId,
+  isLoading,
 }: {
   availableForSale: boolean;
   selectedVariantId: string | undefined;
+  isLoading: boolean;
 }) {
   const buttonClasses =
     "relative flex w-full items-center justify-center rounded-full bg-blue-600 p-4 tracking-wide text-white";
@@ -45,14 +47,16 @@ function SubmitButton({
   return (
     <button
       aria-label="Add to cart"
+      disabled={isLoading}
       className={clsx(buttonClasses, {
-        "hover:opacity-90": true,
+        "hover:opacity-90": !isLoading,
+        "cursor-not-allowed opacity-60": isLoading,
       })}
     >
       <div className="absolute left-0 ml-4">
         <PlusIcon className="h-5" />
       </div>
-      Add To Cart
+      {isLoading ? "Adding..." : "Add To Cart"}
     </button>
   );
 }
@@ -77,7 +81,6 @@ export function AddToCart({ product }: { product: Product }) {
     (variant) => variant.id === selectedVariantId,
   )!;
 
-  // Track when item was last added for toast notification
   useEffect(() => {
     if (lastAdded) {
       const timer = setTimeout(() => {
@@ -87,10 +90,11 @@ export function AddToCart({ product }: { product: Product }) {
     }
   }, [lastAdded]);
 
-  // Sync adding state with form action
   useEffect(() => {
-    setIsAdding(false);
-  });
+    if (message !== null) {
+      setIsAdding(false);
+    }
+  }, [message]);
 
   return (
     <form
@@ -104,6 +108,7 @@ export function AddToCart({ product }: { product: Product }) {
       <SubmitButton
         availableForSale={availableForSale}
         selectedVariantId={selectedVariantId}
+        isLoading={isAdding}
       />
       <p aria-live="polite" className="sr-only" role="status">
         {message}
