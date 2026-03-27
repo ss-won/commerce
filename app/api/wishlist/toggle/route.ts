@@ -12,5 +12,5 @@ export async function POST(request: NextRequest) {
   }
 
   // TODO: Replace with actual database operation
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, count: 0 });
 }
