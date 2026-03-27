@@ -5,6 +5,10 @@ import { Product } from "lib/shopify/types";
 
 const WISHLIST_KEY = "wishlist";
 
+interface WishlistButtonProps {
+  product: Product;
+}
+
 function getWishlistItems(): string[] {
   try {
     const saved = localStorage.getItem(WISHLIST_KEY);
@@ -24,9 +28,10 @@ function setWishlistItems(items: string[]): void {
   }
 }
 
-export default function WishlistButton({ product }: { product: Product }) {
+export default function WishlistButton({ product }: WishlistButtonProps) {
   const [wishlisted, setWishlisted] = useState(false);
   const [count, setCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const items = getWishlistItems();
@@ -34,7 +39,7 @@ export default function WishlistButton({ product }: { product: Product }) {
       setWishlisted(true);
     }
 
-    fetch("/api/wishlist/count?productId=" + product.id)
+    fetch(`/api/wishlist/count?productId=${product.id}`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch wishlist count");
         return res.json();
@@ -43,56 +48,57 @@ export default function WishlistButton({ product }: { product: Product }) {
       .catch(() => {});
   }, [product.id]);
 
-  const toggleWishlist = () => {
+  const handleToggleWishlist = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+
     const prevWishlisted = wishlisted;
     const prevItems = getWishlistItems();
+    const prevCount = count;
 
     const nextWishlisted = !wishlisted;
     const nextItems = nextWishlisted
       ? [...prevItems, product.id]
       : prevItems.filter((id: string) => id !== product.id);
+    const nextCount = nextWishlisted ? count + 1 : Math.max(0, count - 1);
 
     setWishlistItems(nextItems);
     setWishlisted(nextWishlisted);
+    setCount(nextCount);
 
-    fetch("/api/wishlist/toggle", {
-      method: "POST",
-      body: JSON.stringify({ productId: product.id }),
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to toggle wishlist");
-      })
-      .catch(() => {
-        setWishlistItems(prevItems);
-        setWishlisted(prevWishlisted);
+    try {
+      const res = await fetch("/api/wishlist/toggle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: product.id }),
       });
+      if (!res.ok) throw new Error("Failed to toggle wishlist");
+      const data = await res.json();
+      if (data.count !== undefined) setCount(data.count);
+    } catch {
+      setWishlistItems(prevItems);
+      setWishlisted(prevWishlisted);
+      setCount(prevCount);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        marginTop: "12px",
-      }}
-    >
+    <div className="mt-3 flex items-center gap-2">
       <button
-        onClick={toggleWishlist}
-        style={{
-          background: "none",
-          border: wishlisted ? "2px solid red" : "2px solid gray",
-          borderRadius: "50%",
-          width: "40px",
-          height: "40px",
-          cursor: "pointer",
-          fontSize: "18px",
-        }}
+        type="button"
+        aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+        onClick={handleToggleWishlist}
+        disabled={isLoading}
+        className={`flex h-10 w-10 items-center justify-center rounded-full border-2 bg-transparent text-lg transition-colors ${
+          wishlisted ? "border-red-500" : "border-gray-400"
+        } disabled:cursor-not-allowed disabled:opacity-50`}
       >
         {wishlisted ? "❤️" : "🤍"}
       </button>
-      <span style={{ fontSize: "14px", color: "#666" }}>
-        {count > 0 ? count + " people wishlisted" : "Be the first to wishlist!"}
+      <span className="text-sm text-gray-500">
+        {count > 0 ? `${count} people wishlisted` : "Be the first to wishlist!"}
       </span>
     </div>
   );
