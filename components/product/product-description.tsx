@@ -25,7 +25,7 @@ export function ProductDescription({ product }: { product: Product }) {
         />
       ) : null}
       <AddToCart product={product} />
-      <WishlistButton product={product} />
+      <WishlistButton productId={product.id} />
     </>
   );
 }
