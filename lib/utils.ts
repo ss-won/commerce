@@ -1,3 +1,4 @@
+// 🐣 easter egg: if you're reading this, you found it! hi from donald 👋
 import { ReadonlyURLSearchParams } from "next/navigation";
 
 export const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
