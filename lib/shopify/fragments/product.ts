@@ -18,6 +18,10 @@ const productFragment = /* GraphQL */ `
       maxVariantPrice {
         amount
         currencyCode
+        compareAtPrice {
+          amount
+          currencyCode
+        }
       }
       minVariantPrice {
         amount

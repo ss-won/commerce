@@ -5,15 +5,17 @@ import clsx from "clsx";
 import { addItem } from "components/cart/actions";
 import { Product, ProductVariant } from "lib/shopify/types";
 import { useSearchParams } from "next/navigation";
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useCart } from "./cart-context";
 
 function SubmitButton({
   availableForSale,
   selectedVariantId,
+  isLoading,
 }: {
   availableForSale: boolean;
   selectedVariantId: string | undefined;
+  isLoading: boolean;
 }) {
   const buttonClasses =
     "relative flex w-full items-center justify-center rounded-full bg-blue-600 p-4 tracking-wide text-white";
@@ -45,14 +47,16 @@ function SubmitButton({
   return (
     <button
       aria-label="Add to cart"
+      disabled={isLoading}
       className={clsx(buttonClasses, {
-        "hover:opacity-90": true,
+        "hover:opacity-90": !isLoading,
+        "cursor-not-allowed opacity-60": isLoading,
       })}
     >
       <div className="absolute left-0 ml-4">
         <PlusIcon className="h-5" />
       </div>
-      Add To Cart
+      {isLoading ? "Adding..." : "Add To Cart"}
     </button>
   );
 }
@@ -62,6 +66,8 @@ export function AddToCart({ product }: { product: Product }) {
   const { addCartItem } = useCart();
   const searchParams = useSearchParams();
   const [message, formAction] = useActionState(addItem, null);
+  const [isAdding, setIsAdding] = useState(false);
+  const [lastAdded, setLastAdded] = useState<string | null>(null);
 
   const variant = variants.find((variant: ProductVariant) =>
     variant.selectedOptions.every(
@@ -75,20 +81,43 @@ export function AddToCart({ product }: { product: Product }) {
     (variant) => variant.id === selectedVariantId,
   )!;
 
+  useEffect(() => {
+    if (lastAdded) {
+      const timer = setTimeout(() => {
+        setLastAdded(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [lastAdded]);
+
+  useEffect(() => {
+    if (message !== null) {
+      setIsAdding(false);
+    }
+  }, [message]);
+
   return (
     <form
       action={async () => {
+        setIsAdding(true);
         addCartItem(finalVariant, product);
+        setLastAdded(product.title);
         addItemAction();
       }}
     >
       <SubmitButton
         availableForSale={availableForSale}
         selectedVariantId={selectedVariantId}
+        isLoading={isAdding}
       />
       <p aria-live="polite" className="sr-only" role="status">
         {message}
       </p>
+      {lastAdded && (
+        <p className="mt-2 text-sm text-green-600">
+          {lastAdded} added to cart!
+        </p>
+      )}
     </form>
   );
 }
